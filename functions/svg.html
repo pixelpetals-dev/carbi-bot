@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Carbiforce Chatbot</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    #chatbot-toggle {
+      position: fixed;
+      bottom: 32px;
+      right: 32px;
+      background: #991a32;
+      color: white;
+      border-radius: 50%;
+      width: 56px;
+      height: 56px;
+      font-size: 28px;
+      border: none;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+      cursor: pointer;
+      z-index: 9999;
+    }
+
+    #chatbot-window {
+      display: none;
+      position: fixed;
+      bottom: 100px;
+      right: 32px;
+      width: 350px;
+      max-width: 95vw;
+      height: 500px;
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+      overflow: hidden;
+      flex-direction: column;
+      z-index: 10000;
+      border: 1px solid #e0e0e0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #chatbot-header {
+      background: #991a32;
+      color: white;
+      padding: 16px;
+      display: flex;
+      justify-content: space-between;
+      font-weight: bold;
+    }
+
+    #chatbot-close {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 20px;
+      cursor: pointer;
+    }
+
+    #chatbot-messages {
+      flex: 1;
+      padding: 16px;
+      overflow-y: auto;
+      background: #f7f9fa;
+    }
+
+    .chat-message {
+      max-width: 80%;
+      padding: 10px;
+      margin: 6px 0;
+      border-radius: 16px;
+      font-size: 15px;
+      word-break: break-word;
+      clear: both;
+    }
+
+    .chat-user {
+      background: rgba(153, 26, 50, 0.15);
+      color: #991a32;
+      align-self: flex-end;
+      text-align: right;
+      margin-left: auto;
+    }
+
+    .chat-assistant {
+      background: #f1f3f4;
+      color: #222;
+      align-self: flex-start;
+      text-align: left;
+      margin-right: auto;
+    }
+
+    #chatbot-input-area {
+      display: flex;
+      padding: 10px;
+      background: white;
+      border-top: 1px solid #ccc;
+    }
+
+    #chatbot-input {
+      flex: 1;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 15px;
+    }
+
+    #chatbot-send {
+      background: #991a32;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 16px;
+      margin-left: 8px;
+      cursor: pointer;
+    }
+
+    .product-scroll {
+      display: flex;
+      overflow-x: auto;
+      gap: 12px;
+      padding: 10px 0;
+    }
+
+    .product-card {
+      min-width: 200px;
+      max-width: 200px;
+      border: 1px solid #ddd;
+      border-radius: 12px;
+      padding: 8px;
+      background: white;
+      flex-shrink: 0;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+    }
+
+    .product-card img {
+      width: 100%;
+      border-radius: 8px;
+      margin-bottom: 8px;
+    }
+
+    .product-card h4 {
+      font-size: 14px;
+      margin: 0 0 4px;
+      color: #991a32;
+    }
+
+    .product-card p {
+      font-size: 13px;
+      margin: 2px 0;
+    }
+  </style>
+</head>
+<body>
+
+<button id="chatbot-toggle">💬</button>
+
+<div id="chatbot-window">
+  <div id="chatbot-header">
+    Carbiforce Bot
+    <button id="chatbot-close">&times;</button>
+  </div>
+  <div id="chatbot-messages"></div>
+  <div id="chatbot-input-area">
+    <input id="chatbot-input" type="text" placeholder="Ask something..." />
+    <button id="chatbot-send" type="button">Send</button>
+  </div>
+</div>
+
+<script>
+  window.onerror = function (message, source, lineno, colno, error) {
+    console.error("🌐 GLOBAL JS ERROR:", message, "at line", lineno);
+  };
+
+  function addMessage(text, sender = "assistant") {
+    const container = document.getElementById("chatbot-messages");
+    const msg = document.createElement("div");
+    msg.classList.add("chat-message", sender === "user" ? "chat-user" : "chat-assistant");
+    msg.textContent = text;
+    container.appendChild(msg);
+    container.scrollTop = container.scrollHeight;
+  }
+
+  function addProductCards(products) {
+    const container = document.getElementById("chatbot-messages");
+
+    const scroll = document.createElement("div");
+    scroll.className = "product-scroll chat-message chat-assistant";
+
+    products.forEach(product => {
+      let imgSrc = product.img_src;
+      const isValid = typeof imgSrc === "string" &&
+        imgSrc.startsWith("http") &&
+        !imgSrc.includes("Liquid error") &&
+        !imgSrc.includes("invalid url") &&
+        /\.(jpg|jpeg|png|webp)$/i.test(imgSrc);
+
+      if (!isValid) {
+        imgSrc = "https://cdn.shopify.com/s/files/1/0643/4648/8910/files/placeholder-image11.jpg";
+      }
+
+      const card = document.createElement("div");
+      card.className = "product-card";
+      card.innerHTML = `
+        <img src="${imgSrc}" alt="${product.title}" 
+             onerror="this.src='https://cdn.shopify.com/s/files/1/0643/4648/8910/files/placeholder-image11.jpg'" />
+        <h4>${product.title}</h4>
+        <p>₹${product.price}</p>
+        <p>Stock: ${product.inventory}</p>
+        <a href="https://carbiforce.shop/products/${product.handle}" target="_blank">View</a>
+      `;
+      scroll.appendChild(card);
+    });
+
+    container.appendChild(scroll);
+    container.scrollTop = container.scrollHeight;
+  }
+
+  function sendToBot(userText) {
+    try {
+      console.log("🧪 sendToBot() function START");
+      addMessage(userText, "user");
+
+      fetch("https://3e79-2401-4900-8899-5fb9-ed0f-a91e-ed76-a850.ngrok-free.app/bot", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: userText })
+      })
+        .then(res => {
+          if (!res.ok) throw new Error("Server error: " + res.status);
+          return res.json();
+        })
+        .then(data => {
+          console.log("✅ Bot response:", data);
+          const { type, answer, results, suggestions } = data.data || {};
+
+          if (answer) addMessage(answer);
+          if (type === "product" && Array.isArray(results)) {
+            addProductCards(results);
+          }
+          if (suggestions) addMessage(suggestions);
+        })
+        .catch(err => {
+          console.error("❌ Bot request failed:", err);
+          addMessage("⚠️ Failed to get bot response.");
+        });
+    } catch (err) {
+      console.error("❌ JS crash inside sendToBot:", err);
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded", function () {
+    const chatbotToggle = document.getElementById("chatbot-toggle");
+    const chatbotWindow = document.getElementById("chatbot-window");
+    const chatbotClose = document.getElementById("chatbot-close");
+
+    chatbotToggle.onclick = () => chatbotWindow.style.display = "flex";
+    chatbotClose.onclick = () => chatbotWindow.style.display = "none";
+
+    document.addEventListener("click", function (e) {
+      if (e.target && e.target.id === "chatbot-send") {
+        console.log("📨 Send button clicked.");
+        const input = document.getElementById("chatbot-input");
+        const text = input.value.trim();
+        if (text) {
+          input.value = "";
+          sendToBot(text);
+        }
+      }
+    });
+  });
+</script>
+</body>
+</html>

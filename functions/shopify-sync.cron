@@ -1,0 +1,4 @@
+# Cron job for syncing Shopify products to SQLite
+# Runs every 45 minutes
+
+*/45 * * * * cd /d/carfi-bot/functions && /usr/bin/node syncShopifyToSqlite.js >> sync.log 2>&1
